@@ -1,0 +1,26 @@
+[
+  {
+    "authorizing_bank": "HSBC, 100-32455",
+    "card_code": "111",
+    "card_limit": "300000",
+    "currency": "usd",
+    "customer_id": "CUST_4322-045",
+    "exp_month": "04",
+    "exp_year": "2026",
+    "id": "4140-2342-2342-2344",
+    "name": "George Washington",
+    "zip_code": "80210"
+  },
+  {
+    "authorizing_bank": "Wells Fargo, 102-12441",
+    "card_code": "123",
+    "card_limit": "50000",
+    "currency": "usd",
+    "customer_id": "CUST_044_12355",
+    "exp_month": "12",
+    "exp_year": "2028",
+    "id": "4140-1233-3445-4561",
+    "name": "John Adams",
+    "zip_code": "80211"
+  }
+]

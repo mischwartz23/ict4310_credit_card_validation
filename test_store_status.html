@@ -1,0 +1,107 @@
+<!doctype html>
+<!--
+    File: store_status.html
+    Author: M I Schwartz
+
+    This is a form to status the unsettled credit card charges, 
+    and to show how language is irrelevant to REST requests
+-->
+<html>
+
+<head>
+  <title>Credit Card Network Unsettled transactions</title>
+  <!-- It is normally poor form to mix CSS in the HTML, but it is done here
+       to keep everything in one file -->
+  <style>
+  .error { color: red; }
+  table th { font-weight: bold; }
+  table { padding: 2px; }
+  th, td { padding: 2px; border-style: solid; }
+  </style>
+</head>
+
+<body>
+  <h1>Credit Card Network Unsettled Credit Card Charges</h1>
+  <p>
+    Simple credit card unsettled transaction status
+  </p>
+  <div>
+  <button type="button" id="store">Update information</button>
+  </div>
+  <div>
+  <label id="label" for="verbose">Verbose output</label>
+  <input type="checkbox" id="verbose" name="verbose"/>
+  </div>
+  <article><h2>Results</h2>
+  <div id="transactions">
+  </div>
+  <div id="status">
+  </div>
+  </article>
+
+  <!-- it is normally poor form to include script in the HTML body, but it is done here 
+       to keep everything in one file -->
+  <script>
+      const URL="http://localhost:8000/api/store";
+      const verbose = JSON.stringify({ verbose: true });
+      const quiet   = JSON.stringify({ verbose: false });
+      var output = quiet;
+
+      function do_checkbox(event) {
+         if ( document.getElementById("verbose").checked ) {
+            output = verbose;
+         } else {
+            output = quiet;
+         }
+      }
+      
+      function do_fetch() {
+         document.getElementById('status').innerHTML = '';
+         fetch(URL, { method: "POST", body: output })
+	    .then( response => response.json())
+            .then( result => display_result(result) )
+            .catch( problem => { console.error("Error: ",problem); display_error(problem); } );
+      }
+
+      function display_error(error_text) {
+          var text="<div><h2>Error</h2><p class='error'>"+error_text+"</p></div>";
+          document.getElementById('status').innerHTML = text;
+      }
+      function init() {
+          document.getElementById('verbose').onclick = do_checkbox;
+          document.getElementById('store').onclick = do_fetch;
+      }
+
+      function display_result(result) {
+         console.log(result);
+         var text='';
+         if ( result.length ) {
+           text += "<p>There are "+result.length+" results</p>\n"
+           if ( output === verbose) {
+             text += "<table>\n";  
+             text += "  <tr>\n";
+             text += "<th>Approval Code</th><th>Cardholder</th><th>Amount</th>\n";
+             text += "  </tr>\n";
+             for ( item in result ) {
+               text += "  <tr>\n";
+               text += "    <td>"+result[item]["approval_code"]+"</td>\n";
+               text += "    <td>"+result[item]["card"]["name"]+"</td>\n";
+               text += "    <td>"+(result[item]["amount"] / 100.0).toFixed(2)+" "+result[item]["currency"].toUpperCase()+"</td>\n";
+               text += "  </tr>\n";
+             }
+             text += "</table>\n";  
+           } else {
+             for ( item in result ) {
+               text += "<p>"+result[item]+"</p>\n";
+             }
+           }
+         } else {
+           text='<p>No unsettled transaction</p>'
+         }
+         document.getElementById('transactions').innerHTML=text;
+      }
+      window.onload = init;
+  </script>
+</body>
+
+</html>

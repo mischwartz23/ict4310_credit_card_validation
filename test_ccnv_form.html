@@ -1,0 +1,197 @@
+d<!doctype html>
+<!--
+    File: form.html
+    Author: Michael Schwartz
+
+    This is a test form to submit post requests to the credit_card_validation_service and
+    view the results.
+    In a "real" system, the merchant application would collect the information from the form,
+    call the credit_card_validation_service, parse the results, and properly integrate the results
+    into the merchant's shopping application
+
+    This form uses the GET transaction (which would never be used for credit card validation) to
+    format the POST request properly to the service, adding the merchant information (required by
+    authorization) and relay the result back to the caller
+
+    This form assumes that the HTTP service (which would never be supported for credit card processing,
+    and therefore autofill may be turned off on your browser) is on port 8000.
+
+    This form includes both CSS and JavaScript segments; in a "real" form, these
+    would be in separate .css and .js files, respectively, and included here.
+-->
+<html>
+
+<head>
+  <title>Credit Card Network Processor Test Form</title>
+  <style>
+  .error { color: red; }
+  table th { font-weight: bold; }
+  table { padding: 2px; }
+  th, td { padding: 2px; border-style: solid; }
+  </style>
+</head>
+
+<body>
+  <h1>Credit Card Network Processor Test Form</h1>
+  <article>
+    <h2>Simple credit card form</h2>
+    <p>This form is for testing the credit card network processor</p>
+    <p>It allows for entry of credit card information and a "purchase" amount</p>
+    <p>It adds a transaction id and merchant information</p>
+    <p>The submission is put into JSON form and submitted to a service site.</p>
+    <p>Upon return from the service, the result is displayed.</p>
+  </article>
+  <article>
+    <em>This is purely for educational purposes and is not an actual payment processing form.</em>
+  </article>
+  <h2>POST for authorization</h2>
+  <p>
+    This form submits a "POST" request to the server for authorization.
+  </p>
+  <div>
+    <form method="GET" action="http://localhost:8000/api/validate">
+      <label for="name">Name</label>      <input type='text' name='name' id="name" />
+      <br/>
+      <label for="card">Card</label>      <input type='text' name='card' id="card" />
+      <br/>
+      <label for="cvv">CVV</label>        <input type='text' name='cvv' id="cvv" />
+      <br/>
+      <label for="em">Exp-Month</label>   <input type='text' name='em' id="em" />
+      <br/>
+      <label for="ey">Exp-Year</label>    <input type='text' name='ey' id="ey" />
+      <br/>
+      <label for="amount">Amount</label>  <input type='text' name='amount' id="amount" />
+      <br/>
+      <input type="button" id="fetch" value="POST Request" />
+      <br/><br/>
+      <label for="merchant_name">Merchant Name</label><input type='text' name='merchant_name' id='merchant_name' disabled/>
+      <br/>
+      <label for="merchant_id">Merchant ID</label><input type='text' name="merchant_id" id="merchant_id" disabled/>
+      <br/>
+      <label for="transaction_id">Transaction ID</label><input type='text' name="transaction_id" id="transaction_id" disabled/>
+    </form>
+  </div>
+  <div id="status">
+  </div>
+  <div id="transactions">
+  </div>
+
+  <!-- it is normally poor form to include script in the HTML body, but it is done here
+       to keep everything in one file -->
+  <script>
+      const URLValidate="http://localhost:8000/api/validate";
+      const merchantData = {"name":"Target","network_id":"merch_1e_2f_3g"};
+      let sampleTransactionId="auth_123";
+
+      let globalResponse = {};
+      let globalParameters = {};
+      let globalProblem = {};
+
+      function do_fetch() {
+         document.getElementById('status').innerHTML = '';
+         let parametersPost = { method: "POST", headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Origin': 'localhost' } };
+
+         // Add the data from the form to the parameters
+         let card = {
+           id: document.getElementById('card').value.trim(),
+           name: document.getElementById('name').value.trim(),
+           card_code: document.getElementById('cvv').value.trim(),
+           currency: "usd",
+           exp_month: document.getElementById('em').value.trim(),
+           exp_year: document.getElementById('ey').value.trim(),
+         };
+         let data = {
+           card: card,
+           id: sampleTransactionId,
+           currency: "usd",
+           amount: parseInt(document.getElementById('amount').value.trim()*100,10),
+         };
+         // Add the merchant data
+         data.merchant_data = merchantData;
+
+         parametersPost.body = JSON.stringify(data);
+
+         console.log("URL:",URLValidate);
+         globalParameters = parametersPost;
+
+         console.log("Params:", parametersPost);
+         // fetch(URL, { method: "POST", body: output, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Origin': 'localhost' } })
+         // fetch(URL, { method: "GET", headers: {'Access-Control-Allow-Origin': '*', 'Origin': 'localhost' } })
+         fetch(URLValidate, parametersPost)
+	          .then(function(response) {
+                      globalResponse = response;
+                      // console.log("Response:",response);
+                       const contentType = response.headers.get("content-type");
+                       if (contentType && contentType.indexOf("application/json") !== -1) {
+                         return response.json();
+                       } else {
+                         return response.text();
+                       }
+                 })
+            .then( result => display_result(result) )
+            .catch( problem => {
+              globalProblem = problem;
+              console.error("Error: ", problem);
+              display_error(problem);
+            });
+      }
+
+      function display_error(error_text) {
+          var text="<div><h2>Error</h2><p class='error'>"+error_text+"</p></div>";
+          document.getElementById('status').innerHTML = text;
+      }
+      function init() {
+          document.getElementById('fetch').onclick = do_fetch;
+          document.getElementById('merchant_name').value = merchantData['name'];
+          document.getElementById('merchant_id').value = merchantData['network_id'];
+          document.getElementById('transaction_id').value = sampleTransactionId;
+      }
+
+      function display_result(result) {
+         var verbose = true;
+         console.log("Result", result);
+         var text='';
+         if ( typeof result === 'object' ) {
+             if (verbose) {
+               text += "<table>\n";
+               text += "  <tr>\n";
+               text += "<th>Approval Code</th><th>Cardholder</th><th>Amount</th>\n";
+               text += "  </tr>\n";
+               text += "  <tr>\n";
+               if ( result['approval_code']) {
+                 text += "    <td>"+result["approval_code"]+"</td>\n";
+               } else {
+                 text += "    <td>Declined</td>\n";
+               }
+               text += "    <td>"+result["card"]["name"]+"</td>\n";
+               text += "    <td>"+(result["amount"] / 100.0).toFixed(2)+" "+result["currency"].toUpperCase()+"</td>\n";
+               text += "  </tr>\n";
+               text += "</table>\n";
+
+               if ( result['failure_code'] ) {
+                 text += "<table><tr>\n";
+                 text += "  <th>Failure code</th><th>Failure message</th>";
+                 text += "</tr><tr>\n";
+                 text += "  <td>"+result['failure_code']+"</td>\n";
+                 if ( result['failure_message'] ) {
+                   text+= "  <td>"+result['failure_message']+"</td>\n";
+                 } else {
+                   text += "<td>&nbsp;</td>\n";
+                 }
+                 text += "</tr></table>\n";
+               }
+              } else {
+                  text += "<p>"+result+"</p>\n";
+              }
+         } else if ( result.startsWith('<') ) {
+           text = result;
+         } else {
+           text = result;
+         }
+         document.getElementById('transactions').innerHTML=text;
+      }
+      window.onload = init;
+  </script>
+</body>
+
+</html>

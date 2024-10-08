@@ -1,0 +1,22 @@
+{
+  "amount": 10000,
+  "approval_code": "appr_bf071ecd-489e-4700-9166-810650a3d814",
+  "approved": true,
+  "card": {
+    "card_code": "123",
+    "currency": "usd",
+    "exp_month": "06",
+    "exp_year": "2021",
+    "id": "4140-1233-3445-4561",
+    "name": "ICT4310 Instructor",
+    "type": "visa",
+    "valid": true}, 
+  "currency": "usd",
+  "failure_code": "",
+  "failure_message": "",
+  "id": "auth_4142ce1f-7e00-4e37-9214-d6724b508ee6",
+  "merchant_data": {
+    "name": "Target",
+    "network_id": "merch_1e_2f_3g"
+    }
+  }
