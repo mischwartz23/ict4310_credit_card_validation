@@ -71,6 +71,8 @@ Transaction structure
 }
 ```
 
+The file `OK_transaction.json` contains a filled-out and valid transaction structure
+
 Settlement structure
 --------------------
 
